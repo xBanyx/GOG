@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Game of the Generals – Mobile Arbiter</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #f2f2f2;
+  }
+
+  .container {
+    max-width: 450px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+
+  h1 {
+    font-size: 22px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  label {
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  select {
+    width: 100%;
+    padding: 14px;
+    font-size: 18px;
+    margin-top: 5px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+  }
+
+  button {
+    width: 100%;
+    padding: 15px;
+    background: #0066ff;
+    color: white;
+    font-size: 20px;
+    border: none;
+    border-radius: 10px;
+    margin-top: 10px;
+  }
+
+  button:active {
+    background: #004bcc;
+  }
+
+  #output {
+    margin-top: 25px;
+    font-size: 26px;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .note {
+    font-size: 13px;
+    text-align: center;
+    color: #666;
+  }
+
+  /* MOBILE FRIENDLY */
+  @media(max-width: 450px) {
+    h1 {
+      font-size: 20px;
+    }
+    select, button {
+      font-size: 18px;
+      padding: 12px;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Game of the Generals – Arbiter</h1>
+
+<label>Piece A:</label>
+<select id="A" onchange="hideSelection('A')">
+  <option value="">Select Piece...</option>
+  <option value="general">General</option>
+  <option value="colonel">Colonel</option>
+  <option value="lt_colonel">Lt. Colonel</option>
+  <option value="major">Major</option>
+  <option value="captain">Captain</option>
+  <option value="1lt">1st Lieutenant</option>
+  <option value="2lt">2nd Lieutenant</option>
+  <option value="sergeant">Sergeant</option>
+  <option value="private">Private</option>
+  <option value="spy">Spy</option>
+  <option value="flag">Flag</option>
+</select>
+
+<label>Piece B:</label>
+<select id="B" onchange="hideSelection('B')">
+  <option value="">Select Piece...</option>
+  <option value="general">General</option>
+  <option value="colonel">Colonel</option>
+  <option value="lt_colonel">Lt. Colonel</option>
+  <option value="major">Major</option>
+  <option value="captain">Captain</option>
+  <option value="1lt">1st Lieutenant</option>
+  <option value="2lt">2nd Lieutenant</option>
+  <option value="sergeant">Sergeant</option>
+  <option value="private">Private</option>
+  <option value="spy">Spy</option>
+  <option value="flag">Flag</option>
+</select>
+
+<button onclick="judge()">RESOLVE</button>
+
+<div id="output"></div>
+<div class="note">Selections are hidden for fairness, like a real arbiter.</div>
+
+</div>
+
+<script>
+// Store secret piece values
+let hiddenA = null;
+let hiddenB = null;
+
+// Automatically hide selection
+function hideSelection(id) {
+  const select = document.getElementById(id);
+  const val = select.value;
+
+  if (id === "A") hiddenA = val;
+  if (id === "B") hiddenB = val;
+
+  // Replace with hidden text
+  select.innerHTML = `<option value="">— HIDDEN —</option>`;
+  select.value = "";
+}
+
+// Rank strengths
+const strength = {
+  "flag": 0,
+  "private": 1,
+  "sergeant": 2,
+  "2lt": 3,
+  "1lt": 4,
+  "captain": 5,
+  "major": 6,
+  "lt_colonel": 7,
+  "colonel": 8,
+  "general": 9
+};
+
+// Arbiter battle function
+function judge() {
+  const A = hiddenA;
+  const B = hiddenB;
+
+  if (!A || !B) return output("Select both pieces first");
+
+  // FLAG RULES
+  if (A === "flag" && B === "flag") return output("Both die");
+  if (A === "flag" && B !== "flag") return output("Piece B wins");
+  if (B === "flag" && A !== "flag") return output("Piece A wins");
+
+  // SPY RULES
+  if (A === "spy" && B === "spy") return output("Both die");
+
+  if (A === "spy") {
+    if (B === "private") return output("Piece B wins");
+    return output("Piece A wins");
+  }
+
+  if (B === "spy") {
+    if (A === "private") return output("Piece A wins");
+    return output("Piece B wins");
+  }
+
+  // NORMAL RANK FIGHT
+  if (strength[A] === strength[B]) return output("Both die");
+  if (strength[A] > strength[B]) return output("Piece A wins");
+  return output("Piece B wins");
+}
+
+function output(text) {
+  document.getElementById("output").textContent = text;
+}
+</script>
+
+</body>
+</html>
