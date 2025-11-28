@@ -55,8 +55,8 @@
     margin-top: 10px;
   }
 
-  #resetBtn {
-    background: #ff4444;
+  button:active {
+    background: #004bcc;
   }
 
   #output {
@@ -83,13 +83,11 @@
 <label>Piece A:</label>
 <select id="A" onchange="hideSelection('A')">
   <option value="">Select Piece...</option>
-
-  <option value="general1">General 5</option>
-  <option value="general2">General 4</option>
+  <option value="general1">General 1</option>
+  <option value="general2">General 2</option>
   <option value="general3">General 3</option>
-  <option value="general4">General 2</option>
-  <option value="general5">General 1</option>
-
+  <option value="general4">General 4</option>
+  <option value="general5">General 5</option>
   <option value="colonel">Colonel</option>
   <option value="lt_colonel">Lt. Colonel</option>
   <option value="major">Major</option>
@@ -105,13 +103,11 @@
 <label>Piece B:</label>
 <select id="B" onchange="hideSelection('B')">
   <option value="">Select Piece...</option>
-
-  <option value="general1">General 5</option>
-  <option value="general2">General 4</option>
+  <option value="general1">General 1</option>
+  <option value="general2">General 2</option>
   <option value="general3">General 3</option>
-  <option value="general4">General 2</option>
-  <option value="general5">General 1</option>
-
+  <option value="general4">General 4</option>
+  <option value="general5">General 5</option>
   <option value="colonel">Colonel</option>
   <option value="lt_colonel">Lt. Colonel</option>
   <option value="major">Major</option>
@@ -124,8 +120,8 @@
   <option value="flag">Flag</option>
 </select>
 
-<button onclick="judge()" onclick="resetArbiter()" >RESOLVE</button>
-<button id="resetBtn" onclick="resetArbiter()">RESET</button>
+<button onclick="judge()">RESOLVE</button>
+<button onclick="resetSelections()">RESET</button>
 
 <div id="output"></div>
 <div class="note">Selections are hidden for fairness, like a real arbiter.</div>
@@ -133,11 +129,10 @@
 </div>
 
 <script>
-// Hidden selection storage
 let hiddenA = null;
 let hiddenB = null;
 
-// Hide selected piece choice for fairness
+// Automatically hide selection after picking
 function hideSelection(id) {
   const select = document.getElementById(id);
   const val = select.value;
@@ -145,26 +140,26 @@ function hideSelection(id) {
   if (id === "A") hiddenA = val;
   if (id === "B") hiddenB = val;
 
-  // Replace list with hidden indicator
+  // Hide the selection
   select.innerHTML = `<option value="">— HIDDEN —</option>`;
   select.value = "";
 }
 
-// Strength ranking
+// Ranking: General 5 highest, General 1 lowest
 const strength = {
-  "general1": 13,
-  "general2": 12,
-  "general3": 11,
-  "general4": 10,
-  "general5": 9,
-  "colonel": 8,
+  "general1": 1,
+  "general2": 2,
+  "general3": 3,
+  "general4": 4,
+  "general5": 5,
+  "colonel": 6,
   "lt_colonel": 7,
-  "major": 6,
-  "captain": 5,
-  "1lt": 4,
-  "2lt": 3,
-  "sergeant": 2,
-  "private": 1,
+  "major": 8,
+  "captain": 9,
+  "1lt": 10,
+  "2lt": 11,
+  "sergeant": 12,
+  "private": 13,
   "spy": 0.5,
   "flag": 0
 };
@@ -175,29 +170,25 @@ function judge() {
 
   if (!A || !B) return output("Select both pieces first");
 
-  // FLAG SPECIAL RULES
-  if (A === "flag" && B === "flag") return output("GAME OVER – Both Flags Eliminated");
+  let result = "";
 
-  if (A === "flag" && B !== "flag") return output("GAME OVER – Flag Captured (B Wins)");
-  if (B === "flag" && A !== "flag") return output("GAME OVER – Flag Captured (A Wins)");
+  // FLAG RULES
+  if (A === "flag" && B === "flag") result = "GAME OVER – Both Flags Eliminated";
+  else if (A === "flag" && B !== "flag") result = "GAME OVER – Flag Captured (B Wins)";
+  else if (B === "flag" && A !== "flag") result = "GAME OVER – Flag Captured (A Wins)";
 
-  // SPY RULE
-  if (A === "spy" && B === "spy") return output("Both die");
+  // SPY RULES
+  else if (A === "spy" && B === "spy") result = "Both die";
+  else if (A === "spy") result = (B === "private") ? "Piece B wins" : "Piece A wins";
+  else if (B === "spy") result = (A === "private") ? "Piece A wins" : "Piece B wins";
 
-  if (A === "spy") {
-    if (B === "private") return output("Piece B wins");
-    return output("Piece A wins");
-  }
+  // NORMAL FIGHT
+  else if (strength[A] === strength[B]) result = "Both die";
+  else if (strength[A] > strength[B]) result = "Piece A wins";
+  else result = "Piece B wins";
 
-  if (B === "spy") {
-    if (A === "private") return output("Piece A wins");
-    return output("Piece B wins");
-  }
-
-  // NORMAL COMBAT
-  if (strength[A] === strength[B]) return output("Both die");
-  if (strength[A] > strength[B]) return output("Piece A wins");
-  return output("Piece B wins");
+  output(result);
+  resetSelections(); // automatically reset after resolve
 }
 
 // Display result
@@ -205,12 +196,15 @@ function output(text) {
   document.getElementById("output").textContent = text;
 }
 
-// RESET FUNCTION
-function resetArbiter() {
+// Reset hidden selections and dropdowns
+function resetSelections() {
   hiddenA = null;
   hiddenB = null;
 
-  document.getElementById("A").innerHTML = `
+  const ASelect = document.getElementById("A");
+  const BSelect = document.getElementById("B");
+
+  ASelect.innerHTML = `
     <option value="">Select Piece...</option>
     <option value="general1">General 1</option>
     <option value="general2">General 2</option>
@@ -229,13 +223,9 @@ function resetArbiter() {
     <option value="flag">Flag</option>
   `;
 
-  document.getElementById("B").innerHTML =
-    document.getElementById("A").innerHTML;
-
-  document.getElementById("output").textContent = "";
+  BSelect.innerHTML = ASelect.innerHTML;
 }
 </script>
 
 </body>
 </html>
-
