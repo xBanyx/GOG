@@ -84,11 +84,11 @@
 <select id="A" onchange="hideSelection('A')">
   <option value="">Select Piece...</option>
 
-  <option value="general1">General 1</option>
-  <option value="general2">General 2</option>
+  <option value="general1">General 5</option>
+  <option value="general2">General 4</option>
   <option value="general3">General 3</option>
-  <option value="general4">General 4</option>
-  <option value="general5">General 5</option>
+  <option value="general4">General 2</option>
+  <option value="general5">General 1</option>
 
   <option value="colonel">Colonel</option>
   <option value="lt_colonel">Lt. Colonel</option>
@@ -106,11 +106,11 @@
 <select id="B" onchange="hideSelection('B')">
   <option value="">Select Piece...</option>
 
-  <option value="general1">General 1</option>
-  <option value="general2">General 2</option>
+  <option value="general1">General 5</option>
+  <option value="general2">General 4</option>
   <option value="general3">General 3</option>
-  <option value="general4">General 4</option>
-  <option value="general5">General 5</option>
+  <option value="general4">General 2</option>
+  <option value="general5">General 1</option>
 
   <option value="colonel">Colonel</option>
   <option value="lt_colonel">Lt. Colonel</option>
@@ -124,7 +124,7 @@
   <option value="flag">Flag</option>
 </select>
 
-<button onclick="judge()">RESOLVE</button>
+<button onclick="judge()" onclick="resetArbiter()" >RESOLVE</button>
 <button id="resetBtn" onclick="resetArbiter()">RESET</button>
 
 <div id="output"></div>
@@ -238,3 +238,4 @@ function resetArbiter() {
 
 </body>
 </html>
+
