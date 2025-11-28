@@ -13,7 +13,6 @@
     padding: 20px;
     background: #f2f2f2;
   }
-
   .container {
     max-width: 450px;
     margin: auto;
@@ -22,18 +21,15 @@
     border-radius: 14px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
   }
-
   h1 {
     font-size: 22px;
     text-align: center;
     margin-bottom: 20px;
   }
-
   label {
     font-size: 18px;
     font-weight: bold;
   }
-
   select {
     width: 100%;
     padding: 14px;
@@ -43,7 +39,6 @@
     border-radius: 8px;
     border: 1px solid #ccc;
   }
-
   button {
     width: 100%;
     padding: 15px;
@@ -54,18 +49,15 @@
     border-radius: 10px;
     margin-top: 10px;
   }
-
   button:active {
     background: #004bcc;
   }
-
   #output {
     margin-top: 25px;
-    font-size: 28px;
+    font-size: 26px;
     font-weight: bold;
     text-align: center;
   }
-
   .note {
     font-size: 13px;
     text-align: center;
@@ -77,17 +69,16 @@
 <body>
 
 <div class="container">
-
 <h1>Game of the Generals – Arbiter</h1>
 
 <label>Piece A:</label>
 <select id="A" onchange="hideSelection('A')">
   <option value="">Select Piece...</option>
-  <option value="general1">General 1</option>
-  <option value="general2">General 2</option>
-  <option value="general3">General 3</option>
-  <option value="general4">General 4</option>
-  <option value="general5">General 5</option>
+  <option value="general5">5 Star General</option>
+  <option value="general4">4 Star General</option>
+  <option value="general3">3 Star General</option>
+  <option value="general2">2 Star General</option>
+  <option value="general1">1 Star General</option>
   <option value="colonel">Colonel</option>
   <option value="lt_colonel">Lt. Colonel</option>
   <option value="major">Major</option>
@@ -95,19 +86,19 @@
   <option value="1lt">1st Lieutenant</option>
   <option value="2lt">2nd Lieutenant</option>
   <option value="sergeant">Sergeant</option>
-  <option value="private">Private</option>
   <option value="spy">Spy</option>
+  <option value="private">Private</option>
   <option value="flag">Flag</option>
 </select>
 
 <label>Piece B:</label>
 <select id="B" onchange="hideSelection('B')">
   <option value="">Select Piece...</option>
-  <option value="general1">General 1</option>
-  <option value="general2">General 2</option>
-  <option value="general3">General 3</option>
-  <option value="general4">General 4</option>
-  <option value="general5">General 5</option>
+  <option value="general5">5 Star General</option>
+  <option value="general4">4 Star General</option>
+  <option value="general3">3 Star General</option>
+  <option value="general2">2 Star General</option>
+  <option value="general1">1 Star General</option>
   <option value="colonel">Colonel</option>
   <option value="lt_colonel">Lt. Colonel</option>
   <option value="major">Major</option>
@@ -115,43 +106,50 @@
   <option value="1lt">1st Lieutenant</option>
   <option value="2lt">2nd Lieutenant</option>
   <option value="sergeant">Sergeant</option>
-  <option value="private">Private</option>
   <option value="spy">Spy</option>
+  <option value="private">Private</option>
   <option value="flag">Flag</option>
 </select>
 
 <button onclick="judge()">RESOLVE</button>
-<button onclick="resetSelections()">RESET</button>
+<button onclick="resetGame()">RESET</button>
 
 <div id="output"></div>
 <div class="note">Selections are hidden for fairness, like a real arbiter.</div>
-
 </div>
 
 <script>
+// Store hidden selections
 let hiddenA = null;
 let hiddenB = null;
 
-// Automatically hide selection after picking
+// Automatically hide selection
 function hideSelection(id) {
   const select = document.getElementById(id);
   const val = select.value;
-
   if (id === "A") hiddenA = val;
   if (id === "B") hiddenB = val;
-
-  // Hide the selection
   select.innerHTML = `<option value="">— HIDDEN —</option>`;
   select.value = "";
 }
 
-// Ranking only among generals (1 weakest → 5 strongest)
-const generalStrength = {
-  "general1": 1,
-  "general2": 2,
-  "general3": 3,
-  "general4": 4,
-  "general5": 5
+// Rank strengths (higher number = stronger)
+const strength = {
+  "general5": 15,
+  "general4": 14,
+  "general3": 13,
+  "general2": 12,
+  "general1": 11,
+  "colonel": 10,
+  "lt_colonel": 9,
+  "major": 8,
+  "captain": 7,
+  "1lt": 6,
+  "2lt": 5,
+  "sergeant": 4,
+  "private": 1,
+  "spy": 16,   // special: kills all officers & flag
+  "flag": 0
 };
 
 function judge() {
@@ -160,65 +158,84 @@ function judge() {
 
   if (!A || !B) return output("Select both pieces first");
 
-  let result = "";
+  // Flag special rules
+  if (A === "flag" && B === "flag") return output("Both Flags die – GAME OVER");
+  if (A === "flag" && B !== "flag") return output("Piece B captured the Flag – GAME OVER");
+  if (B === "flag" && A !== "flag") return output("Piece A captured the Flag – GAME OVER");
 
-  // FLAG RULES
-  if (A === "flag" && B === "flag") result = "GAME OVER – Both Flags Eliminated";
-  else if (A === "flag" && B !== "flag") result = "GAME OVER – Flag Captured (B Wins)";
-  else if (B === "flag" && A !== "flag") result = "GAME OVER – Flag Captured (A Wins)";
-
-  // SPY RULES
-  else if (A === "spy" && B === "spy") result = "Both die";
-  else if (A === "spy") result = (B === "private") ? "Piece B wins" : "Piece A wins";
-  else if (B === "spy") result = (A === "private") ? "Piece A wins" : "Piece B wins";
-
-  // GENERAL vs GENERAL
-  else if (A.startsWith("general") && B.startsWith("general")) {
-    if (generalStrength[A] === generalStrength[B]) result = "Both die";
-    else if (generalStrength[A] > generalStrength[B]) result = "Piece A wins";
-    else result = "Piece B wins";
+  // Spy rules
+  if (A === "spy" && B === "spy") return output("Both die");
+  if (A === "spy") {
+    if (B === "private") return output("Piece B wins");
+    return output("Piece A wins");
+  }
+  if (B === "spy") {
+    if (A === "private") return output("Piece A wins");
+    return output("Piece B wins");
   }
 
-  // NORMAL FIGHT (non-general)
-  else result = "Piece A wins"; // default: A beats B for simplicity
+  // Private special rules
+  if (A === "private" && B === "spy") return output("Piece A wins");
+  if (B === "private" && A === "spy") return output("Piece B wins");
 
-  output(result);
-  resetSelections(); // auto reset after resolve
+  // Sergeant rules
+  if (A === "sergeant" && (B === "private" || B === "flag")) return output("Piece A wins");
+  if (B === "sergeant" && (A === "private" || A === "flag")) return output("Piece B wins");
+
+  // Officers & Generals
+  if (strength[A] === strength[B]) return output("Both die");
+  if (strength[A] > strength[B]) return output("Piece A wins");
+  return output("Piece B wins");
 }
 
-// Display result
 function output(text) {
   document.getElementById("output").textContent = text;
-}
-
-// Reset hidden selections and dropdowns
-function resetSelections() {
+  // auto-reset hidden selections
   hiddenA = null;
   hiddenB = null;
+  document.getElementById("A").innerHTML = `<option value="">Select Piece...</option>
+  <option value="general5">5 Star General</option>
+  <option value="general4">4 Star General</option>
+  <option value="general3">3 Star General</option>
+  <option value="general2">2 Star General</option>
+  <option value="general1">1 Star General</option>
+  <option value="colonel">Colonel</option>
+  <option value="lt_colonel">Lt. Colonel</option>
+  <option value="major">Major</option>
+  <option value="captain">Captain</option>
+  <option value="1lt">1st Lieutenant</option>
+  <option value="2lt">2nd Lieutenant</option>
+  <option value="sergeant">Sergeant</option>
+  <option value="spy">Spy</option>
+  <option value="private">Private</option>
+  <option value="flag">Flag</option>`;
 
-  const ASelect = document.getElementById("A");
-  const BSelect = document.getElementById("B");
+  document.getElementById("B").innerHTML = document.getElementById("A").innerHTML;
+}
 
-  ASelect.innerHTML = `
-    <option value="">Select Piece...</option>
-    <option value="general1">General 1</option>
-    <option value="general2">General 2</option>
-    <option value="general3">General 3</option>
-    <option value="general4">General 4</option>
-    <option value="general5">General 5</option>
-    <option value="colonel">Colonel</option>
-    <option value="lt_colonel">Lt. Colonel</option>
-    <option value="major">Major</option>
-    <option value="captain">Captain</option>
-    <option value="1lt">1st Lieutenant</option>
-    <option value="2lt">2nd Lieutenant</option>
-    <option value="sergeant">Sergeant</option>
-    <option value="private">Private</option>
-    <option value="spy">Spy</option>
-    <option value="flag">Flag</option>
-  `;
+// Manual reset button
+function resetGame() {
+  hiddenA = null;
+  hiddenB = null;
+  document.getElementById("output").textContent = "";
+  document.getElementById("A").innerHTML = `<option value="">Select Piece...</option>
+  <option value="general5">5 Star General</option>
+  <option value="general4">4 Star General</option>
+  <option value="general3">3 Star General</option>
+  <option value="general2">2 Star General</option>
+  <option value="general1">1 Star General</option>
+  <option value="colonel">Colonel</option>
+  <option value="lt_colonel">Lt. Colonel</option>
+  <option value="major">Major</option>
+  <option value="captain">Captain</option>
+  <option value="1lt">1st Lieutenant</option>
+  <option value="2lt">2nd Lieutenant</option>
+  <option value="sergeant">Sergeant</option>
+  <option value="spy">Spy</option>
+  <option value="private">Private</option>
+  <option value="flag">Flag</option>`;
 
-  BSelect.innerHTML = ASelect.innerHTML;
+  document.getElementById("B").innerHTML = document.getElementById("A").innerHTML;
 }
 </script>
 
