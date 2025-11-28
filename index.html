@@ -8,7 +8,7 @@
 
 <style>
   body {
-    font-family: Arial, sans-serif;
+    font-family: Arial;
     margin: 0;
     padding: 20px;
     background: #f2f2f2;
@@ -145,23 +145,13 @@ function hideSelection(id) {
   select.value = "";
 }
 
-// Ranking: General 5 highest, General 1 lowest
-const strength = {
+// Ranking only among generals (1 weakest → 5 strongest)
+const generalStrength = {
   "general1": 1,
   "general2": 2,
   "general3": 3,
   "general4": 4,
-  "general5": 5,
-  "colonel": 6,
-  "lt_colonel": 7,
-  "major": 8,
-  "captain": 9,
-  "1lt": 10,
-  "2lt": 11,
-  "sergeant": 12,
-  "private": 13,
-  "spy": 0.5,
-  "flag": 0
+  "general5": 5
 };
 
 function judge() {
@@ -182,13 +172,18 @@ function judge() {
   else if (A === "spy") result = (B === "private") ? "Piece B wins" : "Piece A wins";
   else if (B === "spy") result = (A === "private") ? "Piece A wins" : "Piece B wins";
 
-  // NORMAL FIGHT
-  else if (strength[A] === strength[B]) result = "Both die";
-  else if (strength[A] > strength[B]) result = "Piece A wins";
-  else result = "Piece B wins";
+  // GENERAL vs GENERAL
+  else if (A.startsWith("general") && B.startsWith("general")) {
+    if (generalStrength[A] === generalStrength[B]) result = "Both die";
+    else if (generalStrength[A] > generalStrength[B]) result = "Piece A wins";
+    else result = "Piece B wins";
+  }
+
+  // NORMAL FIGHT (non-general)
+  else result = "Piece A wins"; // default: A beats B for simplicity
 
   output(result);
-  resetSelections(); // automatically reset after resolve
+  resetSelections(); // auto reset after resolve
 }
 
 // Display result
