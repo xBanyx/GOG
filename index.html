@@ -72,21 +72,23 @@ button.reset:active { background:#c82333; }
 <div class="note">Each player submits their piece secretly. Arbiter reveals the result when both players submit.</div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
-import { initializeApp } from "firebase/app";
-
-// --- Firebase setup ---
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT.firebaseio.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "SENDER_ID",
-  appId: "APP_ID"
+  apiKey: "AIzaSyCbO877EE_W28vCjbSDeMjHX4aa_fRdNT8",
+  authDomain: "generals-arbiter.firebaseapp.com",
+  databaseURL: "https://generals-arbiter-default-rtdb.firebaseio.com",
+  projectId: "generals-arbiter",
+  storageBucket: "generals-arbiter.firebasestorage.app",
+  messagingSenderId: "500778773054",
+  appId: "1:500778773054:web:ea69714e45d9382e7abf6f"
 };
 
+// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
+
+// Get database
 const db = firebase.database();
 
 // --- Strength mapping ---
@@ -99,79 +101,63 @@ const strength = {
 let player = null;
 let mySelection = null;
 
-// --- Submit player piece ---
+// --- Submit selected piece ---
 function submitPiece() {
   player = document.getElementById("playerSelect").value;
   mySelection = document.getElementById("myPiece").value;
+
   if(!player) return alert("Select your player!");
-  if(!mySelection) return alert("Select a piece!");
+  if(!mySelection) return alert("Select your piece!");
 
-  // Save selection to Firebase
-  db.ref('game/'+player).set({piece: mySelection});
+  db.ref("game/" + player).set({ piece: mySelection });
 
-  // Hide your selection
+  // Hide selection
   document.getElementById("myPiece").innerHTML = `<option>— HIDDEN —</option>`;
   document.getElementById("output").textContent = "Waiting for opponent...";
 }
 
-// --- Listen for opponent ---
-db.ref('game').on('value', snapshot => {
+// --- Listen for both players ---
+db.ref("game").on("value", snapshot => {
   const data = snapshot.val();
   if(!data || !data.player1 || !data.player2) return;
 
   const A = data.player1.piece;
   const B = data.player2.piece;
-
   if(!A || !B) return;
 
-  // Resolve
-  const result = resolveBattle(A,B);
-  document.getElementById("output").textContent = result;
+  document.getElementById("output").textContent = resolveBattle(A, B);
 });
 
-// --- Arbiter rules ---
-function resolveBattle(A,B){
-  if(A==='flag' && B==='flag') return "Both Flags die – GAME OVER";
-  if(A==='flag') return "Player 2 captured the Flag – GAME OVER";
-  if(B==='flag') return "Player 1 captured the Flag – GAME OVER";
+// --- Battle Logic ---
+function resolveBattle(A, B) {
+  if(A === "flag" && B === "flag") return "Both Flags die – GAME OVER";
+  if(A === "flag") return "Player 2 captured the Flag – GAME OVER";
+  if(B === "flag") return "Player 1 captured the Flag – GAME OVER";
 
-  if(A==='spy' && B==='spy') return "Both die";
-  if(A==='spy') return (B==='private')?"Player 2 wins":"Player 1 wins";
-  if(B==='spy') return (A==='private')?"Player 1 wins":"Player 2 wins";
+  if(A === "spy" && B === "spy") return "Both die";
 
-  if(A==='private' && B==='spy') return "Player 1 wins";
-  if(B==='private' && A==='spy') return "Player 2 wins";
+  if(A === "spy") return (B === "private") ? "Player 2 wins" : "Player 1 wins";
+  if(B === "spy") return (A === "private") ? "Player 1 wins" : "Player 2 wins";
 
-  if(A==='sergeant' && (B==='private'||B==='flag')) return "Player 1 wins";
-  if(B==='sergeant' && (A==='private'||A==='flag')) return "Player 2 wins";
+  if(A === "private" && B === "spy") return "Player 1 wins";
+  if(B === "private" && A === "spy") return "Player 2 wins";
 
-  if(strength[A]===strength[B]) return "Both die";
-  return (strength[A]>strength[B])?"Player 1 wins":"Player 2 wins";
+  if(A === "sergeant" && (B === "private" || B === "flag")) return "Player 1 wins";
+  if(B === "sergeant" && (A === "private" || A === "flag")) return "Player 2 wins";
+
+  if(strength[A] === strength[B]) return "Both die";
+  return (strength[A] > strength[B]) ? "Player 1 wins" : "Player 2 wins";
 }
 
-// --- Reset ---
-function resetGame(){
-  db.ref('game').remove();
-  document.getElementById("output").textContent="";
-  document.getElementById("myPiece").innerHTML = `<option value="">Select Piece...</option>
-  <option value="general5">5 Star General</option>
-  <option value="general4">4 Star General</option>
-  <option value="general3">3 Star General</option>
-  <option value="general2">2 Star General</option>
-  <option value="general1">1 Star General</option>
-  <option value="colonel">Colonel</option>
-  <option value="lt_colonel">Lt. Colonel</option>
-  <option value="major">Major</option>
-  <option value="captain">Captain</option>
-  <option value="1lt">1st Lieutenant</option>
-  <option value="2lt">2nd Lieutenant</option>
-  <option value="sergeant">Sergeant</option>
-  <option value="spy">Spy</option>
-  <option value="private">Private</option>
-  <option value="flag">Flag</option>`;
+// --- Reset Game ---
+function resetGame() {
+  db.ref("game").remove();
+  document.getElementById("output").textContent = "";
+  location.reload();
 }
-
 </script>
+
 </body>
 </html>
+
 
