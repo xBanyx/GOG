@@ -88,11 +88,8 @@ const firebaseConfig = {
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
-
-// Get database
 const db = firebase.database();
 
-// Strength mapping
 const strength = {
   general5:15, general4:14, general3:13, general2:12, general1:11,
   colonel:10, lt_colonel:9, major:8, captain:7, "1lt":6, "2lt":5,
@@ -112,21 +109,24 @@ function submitPiece() {
 
   db.ref("game/" + player).set({ piece: mySelection });
 
-  
   document.getElementById("output").textContent = "Waiting for opponent...";
 }
 
-// Listen for opponent
-db.ref("game").on("value", snapshot => {
-  const data = snapshot.val();
-  if(!data || !data.player1 || !data.player2) return;
+// Listen for each player individually for faster updates
+db.ref("game").on("child_changed", checkBattle);
+db.ref("game").on("child_added", checkBattle);
 
-  const A = data.player1.piece;
-  const B = data.player2.piece;
-  if(!A || !B) return;
+function checkBattle() {
+  db.ref("game").once("value", snapshot => {
+    const data = snapshot.val();
+    const A = data?.player1?.piece;
+    const B = data?.player2?.piece;
 
-  document.getElementById("output").textContent = resolveBattle(A, B);
-});
+    if(A && B) {
+      document.getElementById("output").textContent = resolveBattle(A, B);
+    }
+  });
+}
 
 // Battle rules
 function resolveBattle(A, B) {
@@ -135,12 +135,8 @@ function resolveBattle(A, B) {
   if(B === "flag") return "Player 1 captured the Flag – GAME OVER";
 
   if(A === "spy" && B === "spy") return "Both die";
-
   if(A === "spy") return (B === "private") ? "Player 2 wins" : "Player 1 wins";
   if(B === "spy") return (A === "private") ? "Player 1 wins" : "Player 2 wins";
-
-  if(A === "private" && B === "spy") return "Player 1 wins";
-  if(B === "private" && A === "spy") return "Player 2 wins";
 
   if(A === "sergeant" && (B === "private" || B === "flag")) return "Player 1 wins";
   if(B === "sergeant" && (A === "private" || A === "flag")) return "Player 2 wins";
@@ -149,14 +145,34 @@ function resolveBattle(A, B) {
   return (strength[A] > strength[B]) ? "Player 1 wins" : "Player 2 wins";
 }
 
-// Reset
+// Reset without reload
 function resetGame() {
   db.ref("game").remove();
   document.getElementById("output").textContent = "";
-  location.reload();
+  document.getElementById("playerSelect").value = "";
+  document.getElementById("myPiece").innerHTML = `
+    <option value="">Select Piece...</option>
+    <option value="general5">5 Star General</option>
+    <option value="general4">4 Star General</option>
+    <option value="general3">3 Star General</option>
+    <option value="general2">2 Star General</option>
+    <option value="general1">1 Star General</option>
+    <option value="colonel">Colonel</option>
+    <option value="lt_colonel">Lt. Colonel</option>
+    <option value="major">Major</option>
+    <option value="captain">Captain</option>
+    <option value="1lt">1st Lieutenant</option>
+    <option value="2lt">2nd Lieutenant</option>
+    <option value="sergeant">Sergeant</option>
+    <option value="spy">Spy</option>
+    <option value="private">Private</option>
+    <option value="flag">Flag</option>
+  `;
 }
 </script>
 
+
 </body>
 </html>
+
 
