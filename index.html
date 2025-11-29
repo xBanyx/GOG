@@ -5,29 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Game of the Generals – Two Phones Arbiter</title>
 
-<!-- Firebase -->
+<!-- Firebase loaded ONCE -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
-body { font-family: Arial; background:#f2f2f2; padding:20px; }
+body {
+  font-family: Arial;
+  margin: 0;
+  padding: 20px;
+  background: #f2f2f2;
+}
 .container {
-  max-width:500px; margin:auto; background:white; padding:25px;
-  border-radius:14px; box-shadow:0 0 15px rgba(0,0,0,0.2);
+  max-width: 500px;
+  margin: auto;
+  background: white;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
 }
-h1 { text-align:center; }
-label { margin-top:15px; font-weight:bold; display:block; }
-select, button {
-  width:100%; padding:12px; font-size:16px; margin-top:6px;
-  border-radius:8px;
-}
-button.submit { background:#007bff; color:white; }
-button.reset { background:#dc3545; color:white; margin-top:12px; }
-#output { font-size:22px; text-align:center; margin-top:20px; }
+h1 { text-align:center; margin-bottom:20px; font-size:24px; }
+label { font-weight:bold; display:block; margin-top:15px; }
+select, input { width:100%; padding:12px; font-size:16px; border-radius:8px; margin-top:6px; }
+button { width:100%; padding:14px; font-size:18px; margin-top:12px; border:none; border-radius:10px; cursor:pointer; }
+button.submit { background:#007bff; color:#fff; }
+button.submit:active { background:#0056b3; }
+button.reset { background:#dc3545; color:#fff; }
+button.reset:active { background:#c82333; }
+#output { margin-top:25px; font-size:22px; font-weight:bold; text-align:center; }
+.note { text-align:center; font-size:13px; color:#666; margin-top:10px; }
 </style>
 </head>
 <body>
-
 <div class="container">
 <h1>Game of the Generals – Two Phones</h1>
 
@@ -62,76 +71,88 @@ button.reset { background:#dc3545; color:white; margin-top:12px; }
 <button class="reset" onclick="resetGame()">RESET</button>
 
 <div id="output"></div>
+<div class="note">Each player submits their piece secretly. Arbiter reveals the result when both players submit.</div>
 </div>
 
 <script>
-// Correct Firebase URL
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCbO877EE_W28vCjbSDeMjHX4aa_fRdNT8",
   authDomain: "generals-arbiter.firebaseapp.com",
-  databaseURL: "https://generals-arbiter-default-rtdb.firebaseio.com",
+  databaseURL: "https://generals-arbiter-default-rtdb.asia-southeast1.firebasedatabase.app/",
   projectId: "generals-arbiter",
   storageBucket: "generals-arbiter.firebasestorage.app",
   messagingSenderId: "500778773054",
   appId: "1:500778773054:web:ea69714e45d9382e7abf6f"
 };
 
+// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
+
+// Get database
 const db = firebase.database();
 
-// strength table
+// Strength mapping
 const strength = {
   general5:15, general4:14, general3:13, general2:12, general1:11,
   colonel:10, lt_colonel:9, major:8, captain:7, "1lt":6, "2lt":5,
   sergeant:4, private:1, spy:16, flag:0
 };
 
+let player = null;
+let mySelection = null;
+
+// Submit
 function submitPiece() {
-  const player = document.getElementById("playerSelect").value;
-  const piece = document.getElementById("myPiece").value;
+  player = document.getElementById("playerSelect").value;
+  mySelection = document.getElementById("myPiece").value;
 
   if(!player) return alert("Select your player!");
-  if(!piece) return alert("Select piece!");
+  if(!mySelection) return alert("Select your piece!");
 
-  db.ref("game/" + player).set({ piece });
+  db.ref("game/" + player).set({ piece: mySelection });
 
-  // hide from screen
   document.getElementById("myPiece").innerHTML = `<option>— HIDDEN —</option>`;
   document.getElementById("output").textContent = "Waiting for opponent...";
 }
 
-// Listen for updates (shows to BOTH phones)
-db.ref("game").on("value", snap => {
-  const g = snap.val();
-  if(!g || !g.player1 || !g.player2) return;
+// Listen for opponent
+db.ref("game").on("value", snapshot => {
+  const data = snapshot.val();
+  if(!data || !data.player1 || !data.player2) return;
 
-  const A = g.player1.piece;
-  const B = g.player2.piece;
+  const A = data.player1.piece;
+  const B = data.player2.piece;
   if(!A || !B) return;
 
-  document.getElementById("output").textContent = resolveBattle(A,B);
+  document.getElementById("output").textContent = resolveBattle(A, B);
 });
 
-// Battle logic
-function resolveBattle(A,B) {
-  if(A==="flag" && B==="flag") return "Both Flags die – DRAW";
-  if(A==="flag") return "Player 2 captured the Flag!";
-  if(B==="flag") return "Player 1 captured the Flag!";
+// Battle rules
+function resolveBattle(A, B) {
+  if(A === "flag" && B === "flag") return "Both Flags die – GAME OVER";
+  if(A === "flag") return "Player 2 captured the Flag – GAME OVER";
+  if(B === "flag") return "Player 1 captured the Flag – GAME OVER";
 
-  if(A==="spy" && B==="spy") return "Both Spies Die";
+  if(A === "spy" && B === "spy") return "Both die";
 
-  if(A==="spy") return (B==="private") ? "Player 2 Wins" : "Player 1 Wins";
-  if(B==="spy") return (A==="private") ? "Player 1 Wins" : "Player 2 Wins";
+  if(A === "spy") return (B === "private") ? "Player 2 wins" : "Player 1 wins";
+  if(B === "spy") return (A === "private") ? "Player 1 wins" : "Player 2 wins";
 
-  if(A==="sergeant" && (B==="private"||B==="flag")) return "Player 1 Wins";
-  if(B==="sergeant" && (A==="private"||A==="flag")) return "Player 2 Wins";
+  if(A === "private" && B === "spy") return "Player 1 wins";
+  if(B === "private" && A === "spy") return "Player 2 wins";
 
-  if(strength[A] === strength[B]) return "Both Pieces Die";
-  return (strength[A] > strength[B]) ? "Player 1 Wins" : "Player 2 Wins";
+  if(A === "sergeant" && (B === "private" || B === "flag")) return "Player 1 wins";
+  if(B === "sergeant" && (A === "private" || A === "flag")) return "Player 2 wins";
+
+  if(strength[A] === strength[B]) return "Both die";
+  return (strength[A] > strength[B]) ? "Player 1 wins" : "Player 2 wins";
 }
 
+// Reset
 function resetGame() {
   db.ref("game").remove();
+  document.getElementById("output").textContent = "";
   location.reload();
 }
 </script>
