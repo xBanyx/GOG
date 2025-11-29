@@ -1,79 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Game of the Generals – Arbiter for Two Phones</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game of the Generals – Two Phones Arbiter</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script type="module" src="firebase.js"></script>
 <style>
-  body {
-    font-family: Arial;
-    margin: 0;
-    padding: 20px;
-    background: #f2f2f2;
-  }
-  .container {
-    max-width: 500px;
-    margin: auto;
-    background: white;
-    padding: 25px;
-    border-radius: 14px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.2);
-  }
-  h1 {
-    text-align: center;
-    margin-bottom: 20px;
-    font-size: 24px;
-  }
-  label {
-    font-weight: bold;
-    display: block;
-    margin-top: 15px;
-    font-size: 16px;
-  }
-  select {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    border-radius: 8px;
-    margin-top: 6px;
-  }
-  button {
-    width: 100%;
-    padding: 14px;
-    font-size: 18px;
-    font-weight: bold;
-    border: none;
-    border-radius: 10px;
-    margin-top: 12px;
-    cursor: pointer;
-  }
-  button.submit1 { background: #007bff; color: #fff; }
-  button.submit1:active { background: #0056b3; }
-  button.submit2 { background: #28a745; color: #fff; }
-  button.submit2:active { background: #1e7e34; }
-  button.reset { background: #dc3545; color: #fff; }
-  button.reset:active { background: #c82333; }
-
-  #output {
-    margin-top: 25px;
-    font-size: 22px;
-    font-weight: bold;
-    text-align: center;
-  }
-  .note {
-    text-align: center;
-    font-size: 13px;
-    color: #666;
-    margin-top: 10px;
-  }
+body {
+  font-family: Arial;
+  margin: 0;
+  padding: 20px;
+  background: #f2f2f2;
+}
+.container {
+  max-width: 500px;
+  margin: auto;
+  background: white;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+}
+h1 { text-align:center; margin-bottom:20px; font-size:24px; }
+label { font-weight:bold; display:block; margin-top:15px; }
+select, input { width:100%; padding:12px; font-size:16px; border-radius:8px; margin-top:6px; }
+button { width:100%; padding:14px; font-size:18px; margin-top:12px; border:none; border-radius:10px; cursor:pointer; }
+button.submit { background:#007bff; color:#fff; }
+button.submit:active { background:#0056b3; }
+button.reset { background:#dc3545; color:#fff; }
+button.reset:active { background:#c82333; }
+#output { margin-top:25px; font-size:22px; font-weight:bold; text-align:center; }
+.note { text-align:center; font-size:13px; color:#666; margin-top:10px; }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>Game of the Generals – Arbiter</h1>
+<h1>Game of the Generals – Two Phones</h1>
 
-<label>Player 1 Piece:</label>
-<select id="player1">
+<label>Select Your Player:</label>
+<select id="playerSelect">
+  <option value="">Select Player</option>
+  <option value="player1">Player 1</option>
+  <option value="player2">Player 2</option>
+</select>
+
+<label>Your Piece:</label>
+<select id="myPiece">
   <option value="">Select Piece...</option>
   <option value="general5">5 Star General</option>
   <option value="general4">4 Star General</option>
@@ -91,117 +64,111 @@
   <option value="private">Private</option>
   <option value="flag">Flag</option>
 </select>
-<button class="submit1" onclick="submitSelection(1)">Submit Player 1</button>
 
-<label>Player 2 Piece:</label>
-<select id="player2">
-  <option value="">Select Piece...</option>
-  <option value="general5">5 Star General</option>
-  <option value="general4">4 Star General</option>
-  <option value="general3">3 Star General</option>
-  <option value="general2">2 Star General</option>
-  <option value="general1">1 Star General</option>
-  <option value="colonel">Colonel</option>
-  <option value="lt_colonel">Lt. Colonel</option>
-  <option value="major">Major</option>
-  <option value="captain">Captain</option>
-  <option value="1lt">1st Lieutenant</option>
-  <option value="2lt">2nd Lieutenant</option>
-  <option value="sergeant">Sergeant</option>
-  <option value="spy">Spy</option>
-  <option value="private">Private</option>
-  <option value="flag">Flag</option>
-</select>
-<button class="submit2" onclick="submitSelection(2)">Submit Player 2</button>
-
+<button class="submit" onclick="submitPiece()">Submit</button>
 <button class="reset" onclick="resetGame()">RESET</button>
 
 <div id="output"></div>
-<div class="note">Each player submits their piece secretly. Arbiter reveals the result once both have submitted.</div>
+<div class="note">Each player submits their piece secretly. Arbiter reveals the result when both players submit.</div>
 </div>
 
 <script>
-let choice1 = null;
-let choice2 = null;
-
-const strength = {
-  general5: 15,
-  general4: 14,
-  general3: 13,
-  general2: 12,
-  general1: 11,
-  colonel: 10,
-  lt_colonel: 9,
-  major: 8,
-  captain: 7,
-  "1lt": 6,
-  "2lt": 5,
-  sergeant: 4,
-  private: 1,
-  spy: 16,
-  flag: 0
+// --- Firebase setup ---
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
 };
 
-function submitSelection(player) {
-  if(player === 1) {
-    const val = document.getElementById("player1").value;
-    if(!val) return alert("Player 1 must select a piece");
-    choice1 = val;
-    document.getElementById("player1").innerHTML = `<option value="">— HIDDEN —</option>`;
-  } else {
-    const val = document.getElementById("player2").value;
-    if(!val) return alert("Player 2 must select a piece");
-    choice2 = val;
-    document.getElementById("player2").innerHTML = `<option value="">— HIDDEN —</option>`;
-  }
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-  if(choice1 && choice2) resolveBattle();
+// --- Strength mapping ---
+const strength = {
+  general5:15, general4:14, general3:13, general2:12, general1:11,
+  colonel:10, lt_colonel:9, major:8, captain:7, "1lt":6, "2lt":5,
+  sergeant:4, private:1, spy:16, flag:0
+};
+
+let player = null;
+let mySelection = null;
+
+// --- Submit player piece ---
+function submitPiece() {
+  player = document.getElementById("playerSelect").value;
+  mySelection = document.getElementById("myPiece").value;
+  if(!player) return alert("Select your player!");
+  if(!mySelection) return alert("Select a piece!");
+
+  // Save selection to Firebase
+  db.ref('game/'+player).set({piece: mySelection});
+
+  // Hide your selection
+  document.getElementById("myPiece").innerHTML = `<option>— HIDDEN —</option>`;
+  document.getElementById("output").textContent = "Waiting for opponent...";
 }
 
-function resolveBattle() {
-  const A = choice1;
-  const B = choice2;
-  let result = "";
+// --- Listen for opponent ---
+db.ref('game').on('value', snapshot => {
+  const data = snapshot.val();
+  if(!data || !data.player1 || !data.player2) return;
 
-  // Flag rules
-  if(A === "flag" && B === "flag") result = "Both Flags die – GAME OVER";
-  else if(A === "flag") result = "Player 2 captured the Flag – GAME OVER";
-  else if(B === "flag") result = "Player 1 captured the Flag – GAME OVER";
-  // Spy rules
-  else if(A === "spy" && B === "spy") result = "Both die";
-  else if(A === "spy") result = (B === "private") ? "Player 2 wins" : "Player 1 wins";
-  else if(B === "spy") result = (A === "private") ? "Player 1 wins" : "Player 2 wins";
-  // Private rules
-  else if(A === "private" && B === "spy") result = "Player 1 wins";
-  else if(B === "private" && A === "spy") result = "Player 2 wins";
-  // Sergeant rules
-  else if(A === "sergeant" && (B === "private" || B === "flag")) result = "Player 1 wins";
-  else if(B === "sergeant" && (A === "private" || A === "flag")) result = "Player 2 wins";
-  // Normal officers
-  else if(strength[A] === strength[B]) result = "Both die";
-  else result = (strength[A] > strength[B]) ? "Player 1 wins" : "Player 2 wins";
+  const A = data.player1.piece;
+  const B = data.player2.piece;
 
+  if(!A || !B) return;
+
+  // Resolve
+  const result = resolveBattle(A,B);
   document.getElementById("output").textContent = result;
-  choice1 = null;
-  choice2 = null;
-  resetSelections();
+});
+
+// --- Arbiter rules ---
+function resolveBattle(A,B){
+  if(A==='flag' && B==='flag') return "Both Flags die – GAME OVER";
+  if(A==='flag') return "Player 2 captured the Flag – GAME OVER";
+  if(B==='flag') return "Player 1 captured the Flag – GAME OVER";
+
+  if(A==='spy' && B==='spy') return "Both die";
+  if(A==='spy') return (B==='private')?"Player 2 wins":"Player 1 wins";
+  if(B==='spy') return (A==='private')?"Player 1 wins":"Player 2 wins";
+
+  if(A==='private' && B==='spy') return "Player 1 wins";
+  if(B==='private' && A==='spy') return "Player 2 wins";
+
+  if(A==='sergeant' && (B==='private'||B==='flag')) return "Player 1 wins";
+  if(B==='sergeant' && (A==='private'||A==='flag')) return "Player 2 wins";
+
+  if(strength[A]===strength[B]) return "Both die";
+  return (strength[A]>strength[B])?"Player 1 wins":"Player 2 wins";
 }
 
-function resetSelections() {
-  const selectA = document.getElementById("player1");
-  const selectB = document.getElementById("player2");
-  selectA.innerHTML = originalOptions;
-  selectB.innerHTML = originalOptions;
+// --- Reset ---
+function resetGame(){
+  db.ref('game').remove();
+  document.getElementById("output").textContent="";
+  document.getElementById("myPiece").innerHTML = `<option value="">Select Piece...</option>
+  <option value="general5">5 Star General</option>
+  <option value="general4">4 Star General</option>
+  <option value="general3">3 Star General</option>
+  <option value="general2">2 Star General</option>
+  <option value="general1">1 Star General</option>
+  <option value="colonel">Colonel</option>
+  <option value="lt_colonel">Lt. Colonel</option>
+  <option value="major">Major</option>
+  <option value="captain">Captain</option>
+  <option value="1lt">1st Lieutenant</option>
+  <option value="2lt">2nd Lieutenant</option>
+  <option value="sergeant">Sergeant</option>
+  <option value="spy">Spy</option>
+  <option value="private">Private</option>
+  <option value="flag">Flag</option>`;
 }
 
-function resetGame() {
-  document.getElementById("output").textContent = "";
-  choice1 = null;
-  choice2 = null;
-  resetSelections();
-}
-
-const originalOptions = document.getElementById("player1").innerHTML;
 </script>
 </body>
 </html>
