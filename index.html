@@ -4,9 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Game of the Generals – Two Phones Arbiter</title>
+
+<!-- Firebase loaded ONCE -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script type="module" src="firebase.js"></script>
+
 <style>
 body {
   font-family: Arial;
@@ -72,9 +74,8 @@ button.reset:active { background:#c82333; }
 <div class="note">Each player submits their piece secretly. Arbiter reveals the result when both players submit.</div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCbO877EE_W28vCjbSDeMjHX4aa_fRdNT8",
   authDomain: "generals-arbiter.firebaseapp.com",
@@ -91,7 +92,7 @@ firebase.initializeApp(firebaseConfig);
 // Get database
 const db = firebase.database();
 
-// --- Strength mapping ---
+// Strength mapping
 const strength = {
   general5:15, general4:14, general3:13, general2:12, general1:11,
   colonel:10, lt_colonel:9, major:8, captain:7, "1lt":6, "2lt":5,
@@ -101,7 +102,7 @@ const strength = {
 let player = null;
 let mySelection = null;
 
-// --- Submit selected piece ---
+// Submit
 function submitPiece() {
   player = document.getElementById("playerSelect").value;
   mySelection = document.getElementById("myPiece").value;
@@ -111,12 +112,11 @@ function submitPiece() {
 
   db.ref("game/" + player).set({ piece: mySelection });
 
-  // Hide selection
   document.getElementById("myPiece").innerHTML = `<option>— HIDDEN —</option>`;
   document.getElementById("output").textContent = "Waiting for opponent...";
 }
 
-// --- Listen for both players ---
+// Listen for opponent
 db.ref("game").on("value", snapshot => {
   const data = snapshot.val();
   if(!data || !data.player1 || !data.player2) return;
@@ -128,7 +128,7 @@ db.ref("game").on("value", snapshot => {
   document.getElementById("output").textContent = resolveBattle(A, B);
 });
 
-// --- Battle Logic ---
+// Battle rules
 function resolveBattle(A, B) {
   if(A === "flag" && B === "flag") return "Both Flags die – GAME OVER";
   if(A === "flag") return "Player 2 captured the Flag – GAME OVER";
@@ -149,7 +149,7 @@ function resolveBattle(A, B) {
   return (strength[A] > strength[B]) ? "Player 1 wins" : "Player 2 wins";
 }
 
-// --- Reset Game ---
+// Reset
 function resetGame() {
   db.ref("game").remove();
   document.getElementById("output").textContent = "";
@@ -159,5 +159,3 @@ function resetGame() {
 
 </body>
 </html>
-
-
