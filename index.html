@@ -110,6 +110,7 @@ function submitPiece() {
   // Set the player's piece
   db.ref("game/" + player).set({ piece: mySelection });
 
+  document.getElementById("myPiece").innerHTML = `<option>— HIDDEN —</option>`;
   document.getElementById("output").textContent = "Waiting for opponent...";
 
   // Check if both players have submitted
@@ -182,6 +183,7 @@ function resetGame() {
 
 </body>
 </html>
+
 
 
 
