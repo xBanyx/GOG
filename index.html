@@ -107,26 +107,34 @@ function submitPiece() {
   if(!player) return alert("Select your player!");
   if(!mySelection) return alert("Select your piece!");
 
+  // Set the player's piece
   db.ref("game/" + player).set({ piece: mySelection });
 
   document.getElementById("output").textContent = "Waiting for opponent...";
-}
 
-// Listen for each player individually for faster updates
-db.ref("game").on("child_changed", checkBattle);
-db.ref("game").on("child_added", checkBattle);
-
-function checkBattle() {
+  // Check if both players have submitted
   db.ref("game").once("value", snapshot => {
     const data = snapshot.val();
     const A = data?.player1?.piece;
     const B = data?.player2?.piece;
 
     if(A && B) {
-      document.getElementById("output").textContent = resolveBattle(A, B);
+      const result = resolveBattle(A, B);
+
+      // Store the result in DB
+      db.ref("game/result").set(result);
     }
   });
 }
+
+// Listen for the result
+db.ref("game/result").on("value", snapshot => {
+  const result = snapshot.val();
+  if(result) {
+    document.getElementById("output").textContent = result;
+  }
+});
+
 
 // Battle rules
 function resolveBattle(A, B) {
@@ -174,5 +182,6 @@ function resetGame() {
 
 </body>
 </html>
+
 
 
