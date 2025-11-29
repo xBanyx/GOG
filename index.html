@@ -112,7 +112,7 @@ function submitPiece() {
 
   db.ref("game/" + player).set({ piece: mySelection });
 
-  document.getElementById("myPiece").innerHTML = `<option>— HIDDEN —</option>`;
+  
   document.getElementById("output").textContent = "Waiting for opponent...";
 }
 
@@ -159,3 +159,4 @@ function resetGame() {
 
 </body>
 </html>
+
